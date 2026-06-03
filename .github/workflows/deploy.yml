@@ -53,36 +53,3 @@ jobs:
           
           echo "Pushed images with tags: latest, $SHORT_SHA"
 
-      # 步骤7（可选）: SSH部署到远程服务器
-      - name: Deploy to remote server
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SERVER_PORT || 22 }}
-          script: |
-            # 登录Docker Hub
-            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-            
-            # 停止并删除旧容器
-            docker stop calculator-app || true
-            docker rm calculator-app || true
-            
-            # 删除旧镜像
-            docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/calculator-app:latest || true
-            
-            # 拉取新镜像
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/calculator-app:latest
-            
-            # 运行新容器（映射端口8080）
-            docker run -d \
-              --name calculator-app \
-              -p 8080:8080 \
-              --restart unless-stopped \
-              ${{ secrets.DOCKERHUB_USERNAME }}/calculator-app:latest
-            
-            # 清理无用镜像
-            docker image prune -f
-            
-            echo "Deployment completed successfully!"
